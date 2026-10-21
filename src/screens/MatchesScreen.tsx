@@ -1,7 +1,10 @@
+import { useMemo, useState } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FilterBar } from '../components/FilterBar';
 import { MatchCard } from '../components/MatchCard';
 import { useMatches } from '../hooks/useMatches';
 import type { Match } from '../types/match';
+import { filterMatches, type MatchFilter } from '../utils/filterMatches';
 
 function keyExtractor(item: Match) {
   return item.id;
@@ -14,6 +17,14 @@ function renderMatch({ item }: { item: Match }) {
 // Экран «Матчи тура» — задание в README.md, часть 1.
 export function MatchesScreen() {
   const { state, reload } = useMatches();
+  const [tab, setTab] = useState<MatchFilter>('all');
+
+  const visibleMatches = useMemo(() => {
+    if (state.status !== 'success') {
+      return [];
+    }
+    return filterMatches(state.matches, tab);
+  }, [state, tab]);
 
   let body = null;
   if (state.status === 'loading') {
@@ -36,21 +47,24 @@ export function MatchesScreen() {
         </Pressable>
       </View>
     );
-  } else if (state.matches.length === 0) {
-    body = (
-      <View style={styles.centered}>
-        <Text style={styles.message}>Матчей пока нет</Text>
-      </View>
-    );
   } else {
     body = (
-      <FlatList
-        data={state.matches}
-        keyExtractor={keyExtractor}
-        renderItem={renderMatch}
-        style={styles.list}
-        contentContainerStyle={styles.listContent}
-      />
+      <>
+        <FilterBar value={tab} onChange={setTab} />
+        {visibleMatches.length === 0 ? (
+          <View style={styles.centered}>
+            <Text style={styles.message}>Матчей пока нет</Text>
+          </View>
+        ) : (
+          <FlatList
+            data={visibleMatches}
+            keyExtractor={keyExtractor}
+            renderItem={renderMatch}
+            style={styles.list}
+            contentContainerStyle={styles.listContent}
+          />
+        )}
+      </>
     );
   }
 
