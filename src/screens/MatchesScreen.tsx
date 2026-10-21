@@ -13,6 +13,7 @@ import {
 import { FilterBar } from '../components/FilterBar';
 import { MatchCard } from '../components/MatchCard';
 import { UpdatedAgo } from '../components/UpdatedAgo';
+import { useFavorites } from '../hooks/useFavorites';
 import { useMatches } from '../hooks/useMatches';
 import type { Match } from '../types/match';
 import { filterMatches, type MatchFilter } from '../utils/filterMatches';
@@ -21,15 +22,20 @@ function keyExtractor(item: Match) {
   return item.id;
 }
 
-function renderMatch({ item }: { item: Match }) {
-  return <MatchCard match={item} />;
-}
-
 // Экран «Матчи тура» — задание в README.md, часть 1.
 export function MatchesScreen() {
   const { state, refreshing, reload } = useMatches();
+  const { favorites, isFavorite, toggle } = useFavorites();
   const [tab, setTab] = useState<MatchFilter>('all');
   const [refreshHovered, setRefreshHovered] = useState(false);
+
+  const renderMatch = ({ item }: { item: Match }) => (
+    <MatchCard
+      match={item}
+      favorite={isFavorite(item.id)}
+      onToggleFavorite={() => toggle(item.id)}
+    />
+  );
 
   const visibleMatches = useMemo(() => {
     if (state.status !== 'success') {
@@ -96,6 +102,7 @@ export function MatchesScreen() {
             data={visibleMatches}
             keyExtractor={keyExtractor}
             renderItem={renderMatch}
+            extraData={favorites}
             style={styles.list}
             contentContainerStyle={styles.listContent}
             refreshControl={refreshControl}

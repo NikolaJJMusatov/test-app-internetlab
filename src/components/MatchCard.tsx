@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import type { Match } from '../types/match';
+import { FavoriteButton } from './FavoriteButton';
 
 const startsAtFormatter = new Intl.DateTimeFormat('ru-RU', {
   day: 'numeric',
@@ -34,25 +35,30 @@ function formatStatus(match: Match): string {
 
 type Props = {
   match: Match;
+  favorite: boolean;
+  onToggleFavorite: () => void;
 };
 
-export function MatchCard({ match }: Props) {
+export function MatchCard({ match, favorite, onToggleFavorite }: Props) {
   return (
     <View style={styles.card}>
-      <View style={styles.teams}>
-        <Text style={styles.team} numberOfLines={1}>
-          {match.home.name}
-        </Text>
-        {match.score !== null ? (
-          <Text style={styles.score}>
-            {match.score.home}:{match.score.away}
+      <View style={styles.top}>
+        <View style={styles.teams}>
+          <Text style={styles.team} numberOfLines={1}>
+            {match.home.name}
           </Text>
-        ) : (
-          <Text style={styles.versus}>—</Text>
-        )}
-        <Text style={[styles.team, styles.away]} numberOfLines={1}>
-          {match.away.name}
-        </Text>
+          {match.score !== null ? (
+            <Text style={styles.score}>
+              {match.score.home}:{match.score.away}
+            </Text>
+          ) : (
+            <Text style={styles.versus}>—</Text>
+          )}
+          <Text style={[styles.team, styles.away]} numberOfLines={1}>
+            {match.away.name}
+          </Text>
+        </View>
+        <FavoriteButton active={favorite} onPress={onToggleFavorite} />
       </View>
       <Text style={styles.meta}>{formatStartsAt(match.startsAt)}</Text>
       <Text style={styles.status}>{formatStatus(match)}</Text>
@@ -69,7 +75,13 @@ const styles = StyleSheet.create({
     borderColor: '#e5e7eb',
     gap: 6,
   },
+  top: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
   teams: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
