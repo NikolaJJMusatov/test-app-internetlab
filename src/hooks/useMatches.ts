@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { parseMatches } from '../api/parseMatches';
 import { MATCHES_URL } from '../config';
 import type { Match } from '../types/match';
@@ -6,7 +6,7 @@ import type { Match } from '../types/match';
 export type MatchesState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
-  | { status: 'success'; matches: Match[] };
+  | { status: 'success'; matches: Match[]; updatedAt: Date };
 
 const LOAD_ERROR = 'Не удалось загрузить матчи. Проверьте сеть и нажмите «Повторить».';
 
@@ -16,10 +16,17 @@ function isAbortError(error: unknown): boolean {
 
 export function useMatches() {
   const [state, setState] = useState<MatchesState>({ status: 'loading' });
+  const [refreshing, setRefreshing] = useState(false);
   const [requestId, setRequestId] = useState(0);
+  const stateRef = useRef(state);
+  stateRef.current = state;
 
   const reload = useCallback(() => {
-    setState({ status: 'loading' });
+    if (stateRef.current.status === 'success') {
+      setRefreshing(true);
+    } else {
+      setState({ status: 'loading' });
+    }
     setRequestId((id) => id + 1);
   }, []);
 
@@ -34,14 +41,22 @@ export function useMatches() {
         }
         const payload: unknown = await response.json();
         const matches = parseMatches(payload);
-        if (!controller.signal.aborted) {
-          setState({ status: 'success', matches });
+        if (controller.signal.aborted) {
+          return;
         }
+        setState({ status: 'success', matches, updatedAt: new Date() });
       } catch (error) {
         if (controller.signal.aborted || isAbortError(error)) {
           return;
         }
+        if (stateRef.current.status === 'success') {
+          return;
+        }
         setState({ status: 'error', message: LOAD_ERROR });
+      } finally {
+        if (!controller.signal.aborted) {
+          setRefreshing(false);
+        }
       }
     }
 
@@ -52,5 +67,5 @@ export function useMatches() {
     };
   }, [requestId]);
 
-  return { state, reload };
+  return { state, refreshing, reload };
 }
