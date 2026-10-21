@@ -1,5 +1,15 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { MatchCard } from '../components/MatchCard';
 import { useMatches } from '../hooks/useMatches';
+import type { Match } from '../types/match';
+
+function keyExtractor(item: Match) {
+  return item.id;
+}
+
+function renderMatch({ item }: { item: Match }) {
+  return <MatchCard match={item} />;
+}
 
 // Экран «Матчи тура» — задание в README.md, часть 1.
 export function MatchesScreen() {
@@ -33,7 +43,15 @@ export function MatchesScreen() {
       </View>
     );
   } else {
-    body = <Text style={styles.placeholder}>Загружено матчей: {state.matches.length}</Text>;
+    body = (
+      <FlatList
+        data={state.matches}
+        keyExtractor={keyExtractor}
+        renderItem={renderMatch}
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+      />
+    );
   }
 
   return (
@@ -73,9 +91,12 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#ef3124',
   },
-  placeholder: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#111827',
+  list: {
+    flex: 1,
+    marginTop: 12,
+  },
+  listContent: {
+    gap: 10,
+    paddingBottom: 24,
   },
 });
